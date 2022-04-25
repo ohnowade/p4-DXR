@@ -20,7 +20,7 @@
     },
     "mininet_module": {
         "file_path": "",
-        "module_name": "p4utils.mininetlib.p4net",
+        "module_name": "p4utils.mininetlib.net",
         "object_name": "P4Mininet"
     },
     "topology": {
