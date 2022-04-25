@@ -1,2 +1,2 @@
-table_add ipv4_lpm forward 1 => 2
-table_add ipv4_lpm forward 2 => 1
+table_add ipv4_lpm ipv4_forward 10.0.0.1/32 => 6e:99:2f:d1:24:f7 1
+table_add ipv4_lpm ipv4_forward 10.0.0.2/32 => 8a:09:1c:2c:99:5a 2
