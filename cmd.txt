@@ -1,0 +1,2 @@
+table_add ipv4_lpm forward 1 => 2
+table_add ipv4_lpm forward 2 => 1
