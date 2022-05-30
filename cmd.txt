@@ -1,2 +1,2 @@
-table_add ipv4_lpm ipv4_forward 10.0.0.1/32 => 1
-table_add ipv4_lpm ipv4_forward 10.0.0.2/32 => 2
+table_add lookup_table get_range_table 2560 => false 0 3
+

@@ -34,7 +34,7 @@ header ipv4_t {
 }
 
 struct metadata {
-    bit<8> currentNode;
+    bit<16> next_node_id;
     bool matched;
 }
 
@@ -53,7 +53,6 @@ parser MyParser(packet_in packet,
                 inout standard_metadata_t standard_metadata) {
 
     state start {
-        /* TODO: add parser logic */
         transition parse_ethernet;
     }
 
@@ -61,7 +60,7 @@ parser MyParser(packet_in packet,
         packet.extract(hdr.ethernet);
         transition select(hdr.ethernet.etherType) {
             TYPE_IPV4 : parse_ipv4;
-            default : accept;
+            default : reject;
         }
     }
 
@@ -85,106 +84,78 @@ control MyVerifyChecksum(inout headers hdr, inout metadata meta) {
 **************  I N G R E S S   P R O C E S S I N G   *******************
 *************************************************************************/
 
-action forward(inout standard_metadata_t standard_metadata, 
-               inout ipv4_t ipv4_hdr, 
+action forward(inout ipv4_t ipv4_hdr,
+               inout standard_metadata_t standard_metadata,  
                in egressSpec_t port) {
     standard_metadata.egress_spec = port;
     ipv4_hdr.ttl = ipv4_hdr.ttl - 1;
 }
 
-action get_next_node(inout standard_metadata_t standard_metadata, 
-                     inout ipv4_t ipv4_hdr,
-                     inout metadata meta, 
-                     ip4Addr_t addr_val, 
-                     bit<9> port, 
-                     bit<8> left, 
-                     bit<8> right) {
-    if (ipv4_hdr.dstAddr == addr_val) {
-        meta.matched = true;
-        forward(standard_metadata, ipv4_hdr, port);
-    }
-    else if (ipv4_hdr.dstAddr < addr_val) {
-        meta.currentNode = left;
-    } else {
-        meta.currentNode = right;
-    }
-}
+control QueryLookupTable(inout headers hdr,
+                         inout metadata meta,
+                         inout standard_metadata_t standard_metadata) {
 
-// Binary tree stages
-control Stage1(inout standard_metadata_t standard_metadata, 
-               inout metadata meta, 
-               inout ipv4_t ipv4_hdr) {
-    table root {
+    action get_range_table(inout headers hdr,
+                           inout metadata meta, 
+                           inout standard_metadata_t standard_metadata, 
+                           bool has_range_table, 
+                           bit<16> top_level_id,
+                           bit<9> next_hop) {
+        if (has_range_table) {
+            meta.matched = false;
+            meta.next_node_id = top_level_id;
+        } else {
+            meta.matched = true;
+            forward(standard_metadata, hdr.ipv4, next_hop);
+        }
+    }
+    
+    table lookup_table {
         key = {
-            meta.currentNode: exact;
+            hdr.ipv4.dstAddr >> 16: exact;
         }
         actions = {
-            get_next_node(standard_metadata, ipv4_hdr, meta);
+            get_range_table(hdr, meta, standard_metadata);
             NoAction;
         }
-        size = 1;
+        size = 65536;
         default_action = NoAction();
     }
 
     apply {
-        root.apply();
+        lookup_table.apply();
     }
 }
-
-control Stage2(inout standard_metadata_t standard_metadata, 
-               inout metadata meta, 
-               inout ipv4_t ipv4_hdr) {
-    table nodes {
-        key = {
-            meta.currentNode: exact;
-        }
-        actions = {
-            get_next_node(standard_metadata, ipv4_hdr, meta);
-            NoAction;
-        }
-        size = 2;
-        default_action = NoAction();
-    }
-
-    apply {
-        nodes.apply();
-    }
-}
-
-control Stage3(inout standard_metadata_t standard_metadata, 
-               inout metadata meta, 
-               inout ipv4_t ipv4_hdr) {
-    table leaves {
-        key = {
-            meta.currentNode: exact;
-        }
-        actions = {
-            get_next_node(standard_metadata, ipv4_hdr, meta);
-            NoAction;
-        }
-        size = 4;
-        default_action = NoAction();
-    }
-
-    apply {
-        leaves.apply();
-    }
-}
-
 
 control MyIngress(inout headers hdr,
                   inout metadata meta,
                   inout standard_metadata_t standard_metadata) {
-    Stage1() stage1;
-    Stage2() stage2;
-    Stage3() stage3;
+    action drop() {
+        mark_to_drop(standard_metadata);
+    }
+
+    action ipv4_forward(macAddr_t dstAddr, egressSpec_t port) {
+        /* TODO: fill out code in action body */
+    }
+
+    table ipv4_lpm {
+        key = {
+            hdr.ipv4.dstAddr: lpm;
+        }
+        actions = {
+            ipv4_forward;
+            drop;
+            NoAction;
+        }
+        size = 1024;
+        default_action = NoAction();
+    }
 
     apply {
-        meta.currentNode = 1;
-        meta.matched = false;
-        stage1.apply(standard_metadata, meta, hdr.ipv4);
-        if (!meta.matched) stage2.apply(standard_metadata, meta, hdr.ipv4);
-        if (!meta.matched) stage3.apply(standard_metadata, meta, hdr.ipv4);
+        /* TODO: fix ingress control logic
+         *  - ipv4_lpm should be applied only when IPv4 header is valid
+         */
+        if (!meta.matched) ipv4_lpm.apply();
     }
 }
 
@@ -229,7 +200,6 @@ control MyComputeChecksum(inout headers hdr, inout metadata meta) {
 
 control MyDeparser(packet_out packet, in headers hdr) {
     apply {
-        /* TODO: add deparser logic */
         packet.emit(hdr.ethernet);
         packet.emit(hdr.ipv4);
     }
@@ -242,6 +212,7 @@ control MyDeparser(packet_out packet, in headers hdr) {
 V1Switch(
 MyParser(),
 MyVerifyChecksum(),
+QueryLookupTable(),
 MyIngress(),
 MyEgress(),
 MyComputeChecksum(),
