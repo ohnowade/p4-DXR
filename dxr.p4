@@ -3,6 +3,7 @@
 #include <v1model.p4>
 
 const bit<16> TYPE_IPV4 = 0x800;
+const bit<16> TYPE_ARP = 0x806;
 
 /*************************************************************************
 *********************** H E A D E R S  ***********************************
@@ -36,6 +37,7 @@ header ipv4_t {
 struct metadata {
     bit<16> next_node_id;
     bool matched;
+    bool isARP;
 }
 
 struct headers {
@@ -60,12 +62,19 @@ parser MyParser(packet_in packet,
         packet.extract(hdr.ethernet);
         transition select(hdr.ethernet.etherType) {
             TYPE_IPV4 : parse_ipv4;
-            default : reject;
+            TYPE_ARP: parse_arp;
+            default : accept;
         }
     }
 
     state parse_ipv4 {
         packet.extract(hdr.ipv4);
+        meta.matched = false;
+        transition accept;
+    }
+
+    state parse_arp {
+        meta.isARP = true;
         transition accept;
     }
 }
@@ -95,27 +104,24 @@ control QueryLookupTable(inout headers hdr,
                          inout metadata meta,
                          inout standard_metadata_t standard_metadata) {
 
-    action get_range_table(inout headers hdr,
-                           inout metadata meta, 
-                           inout standard_metadata_t standard_metadata, 
-                           bool has_range_table, 
-                           bit<16> top_level_id,
+    action get_range_table(bit<16> top_level_id,
                            bit<9> next_hop) {
-        if (has_range_table) {
+        if (top_level_id > 0) {
             meta.matched = false;
             meta.next_node_id = top_level_id;
         } else {
             meta.matched = true;
-            forward(standard_metadata, hdr.ipv4, next_hop);
+            forward(hdr.ipv4, standard_metadata, next_hop);
         }
     }
     
     table lookup_table {
         key = {
-            hdr.ipv4.dstAddr >> 16: exact;
+            hdr.ipv4.dstAddr >> 16: exact @name("first_16_bit");
+            //hdr.ipv4.dstAddr : exact;
         }
         actions = {
-            get_range_table(hdr, meta, standard_metadata);
+            get_range_table();
             NoAction;
         }
         size = 65536;
@@ -127,6 +133,81 @@ control QueryLookupTable(inout headers hdr,
     }
 }
 
+action get_next_node(inout headers hdr,
+                     inout metadata meta,
+                     inout standard_metadata_t standard_metadata,
+                     bit<16> val,
+                     bit<9> next_hop,
+                     bit<16> left_node,
+                     bit<16> right_node) {
+    bit<16> last_16_bits = (bit<16>)(hdr.ipv4.dstAddr & 0xFFFF);
+    if (last_16_bits == val) {
+        meta.matched = true;
+        forward(hdr.ipv4, standard_metadata, next_hop);
+    } else if (last_16_bits < val) {
+        meta.next_node_id = left_node;
+    } else {
+        meta.next_node_id = right_node;
+    }
+}
+
+control RangeTableStage1(inout headers hdr,
+                         inout metadata meta,
+                         inout standard_metadata_t standard_metadata) {
+    table range_table_level_1 {
+        key =  {
+            meta.next_node_id : exact;
+        }
+        actions = {
+            get_next_node(hdr, meta, standard_metadata);
+            NoAction;
+        }
+        default_action = NoAction();
+    }
+
+    apply {
+        range_table_level_1.apply();
+    }  
+}
+
+control RangeTableStage2(inout headers hdr,
+                         inout metadata meta,
+                         inout standard_metadata_t standard_metadata) {
+    table range_table_level_2 {
+        key =  {
+            meta.next_node_id : exact;
+        }
+        actions = {
+            get_next_node(hdr, meta, standard_metadata);
+            NoAction;
+        }
+        default_action = NoAction();
+    }
+
+    apply {
+        range_table_level_2.apply();
+    }  
+}
+
+control RangeTableStage3(inout headers hdr,
+                         inout metadata meta,
+                         inout standard_metadata_t standard_metadata) {
+    table range_table_level_3 {
+        key =  {
+            meta.next_node_id : exact;
+        }
+        actions = {
+            get_next_node(hdr, meta, standard_metadata);
+            NoAction;
+        }
+        default_action = NoAction();
+    }
+
+    apply {
+        range_table_level_3.apply();
+    }  
+}
+
 control MyIngress(inout headers hdr,
                   inout metadata meta,
                   inout standard_metadata_t standard_metadata) {
@@ -134,28 +215,24 @@ control MyIngress(inout headers hdr,
         mark_to_drop(standard_metadata);
     }
 
-    action ipv4_forward(macAddr_t dstAddr, egressSpec_t port) {
-        /* TODO: fill out code in action body */
-    }
-
-    table ipv4_lpm {
-        key = {
-            hdr.ipv4.dstAddr: lpm;
-        }
-        actions = {
-            ipv4_forward;
-            drop;
-            NoAction;
-        }
-        size = 1024;
-        default_action = NoAction();
-    }
+    QueryLookupTable() queryLookupTable;
+    RangeTableStage1() rangeTableStage1;
+    RangeTableStage2() rangeTableStage2;
+    RangeTableStage3() rangeTableStage3;
 
     apply {
-        /* TODO: fix ingress control logic
-         *  - ipv4_lpm should be applied only when IPv4 header is valid
-         */
-        if (!meta.matched) ipv4_lpm.apply();
+        if (meta.isARP) {
+            standard_metadata.mcast_grp = 1;
+        }
+        else {
+            queryLookupTable.apply(hdr, meta, standard_metadata);
+            if (meta.matched) exit;
+            rangeTableStage1.apply(hdr, meta, standard_metadata);
+            if (meta.matched) exit;
+            rangeTableStage2.apply(hdr, meta, standard_metadata);
+            if (meta.matched) exit;
+            rangeTableStage3.apply(hdr, meta, standard_metadata);
+        }
     }
 }
 
@@ -212,7 +289,6 @@ control MyDeparser(packet_out packet, in headers hdr) {
 V1Switch(
 MyParser(),
 MyVerifyChecksum(),
-QueryLookupTable(),
 MyIngress(),
 MyEgress(),
 MyComputeChecksum(),

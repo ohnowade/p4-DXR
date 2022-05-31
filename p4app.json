@@ -24,6 +24,7 @@
         "object_name": "P4Mininet"
     },
     "topology": {
+        "assignment_strategy": "mixed",
         "links": [
             [
                 "h1",
