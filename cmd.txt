@@ -3,13 +3,13 @@ table_add lookup_table get_range_table 7691 => 0 2
 table_add lookup_table get_range_table 5921 => 0 3
 table_add lookup_table get_range_table 3108 => 1 0
 
-table_add range_table_level_1 get_next_node 1 => 31613 6 0 1
+table_add range_table_level_1 get_next_node 1 => 31613 8 1 2
 
-table_add range_table_level_2 get_next_node 0 => 31528 8 0 1
-table_add range_table_level_2 get_next_node 1 => 31657 7 2 3
+table_add range_table_level_2 get_next_node 1 => 31528 4 0 1
+table_add range_table_level_2 get_next_node 2 => 31657 7 0 4
 
-table_add range_table_level_3 get_next_node 1 => 31580 4 2 3
-table_add range_table_level_3 get_next_node 3 => 31705 5 6 7
+table_add range_table_level_3 get_next_node 1 => 31580 6 0 0
+table_add range_table_level_3 get_next_node 4 => 31705 5 0 0
 
 mc_mgrp_create 1
 mc_node_create 0 1

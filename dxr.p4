@@ -93,13 +93,6 @@ control MyVerifyChecksum(inout headers hdr, inout metadata meta) {
 **************  I N G R E S S   P R O C E S S I N G   *******************
 *************************************************************************/
 
-action forward(inout ipv4_t ipv4_hdr,
-               inout standard_metadata_t standard_metadata,  
-               in egressSpec_t port) {
-    standard_metadata.egress_spec = port;
-    ipv4_hdr.ttl = ipv4_hdr.ttl - 1;
-}
-
 control QueryLookupTable(inout headers hdr,
                          inout metadata meta,
                          inout standard_metadata_t standard_metadata) {
@@ -111,7 +104,8 @@ control QueryLookupTable(inout headers hdr,
             meta.next_node_id = top_level_id;
         } else {
             meta.matched = true;
-            forward(hdr.ipv4, standard_metadata, next_hop);
+            standard_metadata.egress_spec = next_hop;
+            hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
         }
     }
     
@@ -141,13 +135,21 @@ action get_next_node(inout headers hdr,
                      bit<16> left_node,
                      bit<16> right_node) {
     bit<16> last_16_bits = (bit<16>)(hdr.ipv4.dstAddr & 0xFFFF);
-    if (last_16_bits == val) {
-        meta.matched = true;
-        forward(hdr.ipv4, standard_metadata, next_hop);
-    } else if (last_16_bits < val) {
-        meta.next_node_id = left_node;
+    if (last_16_bits >= val) {
+        standard_metadata.egress_spec = next_hop;
+        if (right_node == 0) {
+            meta.matched = true;
+            hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
+        } else {
+            meta.next_node_id = right_node;
+        }
     } else {
-        meta.next_node_id = right_node;
+        if (left_node == 0) {
+            meta.matched = true;
+            hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
+        } else {
+            meta.next_node_id = left_node;
+        }
     }
 }
 
