@@ -164,6 +164,7 @@ control RangeTableStage1(inout headers hdr,
             get_next_node(hdr, meta, standard_metadata);
             NoAction;
         }
+        size = 1200;
         default_action = NoAction();
     }
 
@@ -183,6 +184,7 @@ control RangeTableStage2(inout headers hdr,
             get_next_node(hdr, meta, standard_metadata);
             NoAction;
         }
+        size = 1500;
         default_action = NoAction();
     }
 
@@ -297,6 +299,11 @@ control MyIngress(inout headers hdr,
     RangeTableStage1() rangeTableStage1;
     RangeTableStage2() rangeTableStage2;
     RangeTableStage3() rangeTableStage3;
+    RangeTableStage4() rangeTableStage4;
+    RangeTableStage5() rangeTableStage5;
+    RangeTableStage6() rangeTableStage6;
+    RangeTableStage7() rangeTableStage7;
+
 
     apply {
         if (meta.isARP) {
