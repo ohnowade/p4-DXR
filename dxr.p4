@@ -210,6 +210,82 @@ control RangeTableStage3(inout headers hdr,
     }  
 }
 
+control RangeTableStage4(inout headers hdr,
+                         inout metadata meta,
+                         inout standard_metadata_t standard_metadata) {
+    table range_table_level_4 {
+        key =  {
+            meta.next_node_id : exact;
+        }
+        actions = {
+            get_next_node(hdr, meta, standard_metadata);
+            NoAction;
+        }
+        default_action = NoAction();
+    }
+
+    apply {
+        range_table_level_4.apply();
+    }  
+}
+
+control RangeTableStage5(inout headers hdr,
+                         inout metadata meta,
+                         inout standard_metadata_t standard_metadata) {
+    table range_table_level_5 {
+        key =  {
+            meta.next_node_id : exact;
+        }
+        actions = {
+            get_next_node(hdr, meta, standard_metadata);
+            NoAction;
+        }
+        default_action = NoAction();
+    }
+
+    apply {
+        range_table_level_5.apply();
+    }  
+}
+
+control RangeTableStage6(inout headers hdr,
+                         inout metadata meta,
+                         inout standard_metadata_t standard_metadata) {
+    table range_table_level_6 {
+        key =  {
+            meta.next_node_id : exact;
+        }
+        actions = {
+            get_next_node(hdr, meta, standard_metadata);
+            NoAction;
+        }
+        default_action = NoAction();
+    }
+
+    apply {
+        range_table_level_6.apply();
+    }  
+}
+
+control RangeTableStage7(inout headers hdr,
+                         inout metadata meta,
+                         inout standard_metadata_t standard_metadata) {
+    table range_table_level_7 {
+        key =  {
+            meta.next_node_id : exact;
+        }
+        actions = {
+            get_next_node(hdr, meta, standard_metadata);
+            NoAction;
+        }
+        default_action = NoAction();
+    }
+
+    apply {
+        range_table_level_7.apply();
+    }  
+}
+
 control MyIngress(inout headers hdr,
                   inout metadata meta,
                   inout standard_metadata_t standard_metadata) {
@@ -234,6 +310,14 @@ control MyIngress(inout headers hdr,
             rangeTableStage2.apply(hdr, meta, standard_metadata);
             if (meta.matched) exit;
             rangeTableStage3.apply(hdr, meta, standard_metadata);
+            if (meta.matched) exit;
+            rangeTableStage4.apply(hdr, meta, standard_metadata);
+            if (meta.matched) exit;
+            rangeTableStage5.apply(hdr, meta, standard_metadata);
+            if (meta.matched) exit;
+            rangeTableStage6.apply(hdr, meta, standard_metadata);
+            if (meta.matched) exit;
+            rangeTableStage7.apply(hdr, meta, standard_metadata);
         }
     }
 }
