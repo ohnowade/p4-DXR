@@ -38,7 +38,30 @@ def treeHelper(treelist, level, high, low, levelindex):
     #build a level list
     Current = Tree(level, currlevelindex , last_s16, nexthop ,left, right )
     return Current
+    
+def convet(treelist, f):
+    for tree in treelist:
+        conTree(tree,f)
 
+        
+def conTree(tree, f):
+    table_name = "range_table_level_" + str(tree.level)
+    f.write("table_add "+ table_name + " get_next_node " + str(tree.index)+ ' => ' + str(tree.value) +" " + str(tree.hop) + " ")
+    if(tree.left == None):
+        f.write('0')
+    else:
+        f.write(str(tree.left.index))
+        f.write(" ")
+    if(tree.right == None):
+        f.write('0')
+    else:
+        f.write(str(tree.right.index))
+    f.write('\n')
+    
+    if tree.left != None:
+        conTree(tree.left,f)
+    if tree.right != None:
+        conTree(tree.right,f)
 
 def main():
     #list, dict
@@ -49,7 +72,7 @@ def main():
     dict_nh = {None:0, 'default':1}
     
     file_name = 'cmd1.txt'
-    f = open(file_name, 'a+')  # open file in append mode
+    f = open(file_name, 'w+')  # open file in append mode
     i=0
     index_nh=0
     totalli={}
@@ -92,21 +115,7 @@ def main():
             f.write('table_add lookup_table get_range_table '+str(i)+ ' => 0 ' + str(index_nh)+'\n' )
         i+=1
     #print(totalli)
-    for tree in treelist:
-        
-        table_name = "range_table_level_" + str(tree.level)
-        
-        f.write("table_add "+ table_name + " get_next_node " + str(tree.index)+ ' => ' + str(tree.value) +" " + str(tree.hop) + " ")
-        if(tree.left == None):
-            f.write('0')
-        else:
-            f.write(str(tree.left.index))
-        f.write(" ")
-        if(tree.right == None):
-            f.write('0')
-        else:
-            f.write(str(tree.right.index))
-        f.write('\n')
+    convet(treelist,f)
     # the rest of list has value none, -> index is key is
     #call
     #print(dict_nh)
