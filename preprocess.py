@@ -38,7 +38,7 @@ def createTables():
     with open('bgptable.txt') as f:
         for line in tqdm(f):
             results = re.match(
-                r'\*  (\d+\.\d+\.\d+\.\d+/?\d*)       (\d+\.\d+\.\d+\.\d+)', line)
+                r'\*.*(\d+\.\d+\.\d+\.\d+/?\d*).*(\d+\.\d+\.\d+\.\d+)', line)
             if results == None:
                 continue
             # tranform to string
@@ -46,7 +46,7 @@ def createTables():
             results = results.group(0)
             results = results.split(' ')
             results = list(
-                filter(lambda val: val != '' and val != '*', results))
+                filter(lambda val: val != '' and val != '*' and val != '*>', results))
 
             ipv4 = results[0].split('/')
             filterIndex = 32
@@ -122,24 +122,24 @@ def createTables():
                 else:
 
                     if minRange == 0 and maxRange == 2 ** 16 - 1:
-                        prefixesDict[keyPrefix].append(
-                            minRange, maxRange, nextHop)
+                        prefixesDict[keyPrefix].append((
+                            minRange, maxRange, nextHop))
                     elif minRange == 0:
-                        prefixesDict[keyPrefix].append(0, maxRange, nextHop)
-                        prefixesDict[keyPrefix].append(
-                            maxRange + 1, 2**16-1, lookupTable[keyPrefix])
+                        prefixesDict[keyPrefix].append((0, maxRange, nextHop))
+                        prefixesDict[keyPrefix].append((
+                            maxRange + 1, 2**16-1, lookupTable[keyPrefix]))
                     elif maxRange == 2**16 - 1:
-                        prefixesDict[keyPrefix].append(
-                            0, minRange-1, lookupTable[keyPrefix])
-                        prefixesDict[keyPrefix].append(
-                            minRange, maxRange, nextHop)
+                        prefixesDict[keyPrefix].append((
+                            0, minRange-1, lookupTable[keyPrefix]))
+                        prefixesDict[keyPrefix].append((
+                            minRange, maxRange, nextHop))
                     else:
-                        prefixesDict[keyPrefix].append(
-                            0, minRange - 1, lookupTable[keyPrefix])
-                        prefixesDict[keyPrefix].append(
-                            minRange, maxRange, nextHop)
-                        prefixesDict[keyPrefix].append(
-                            maxRange+1, 2**16-1, lookupTable[keyPrefix])
+                        prefixesDict[keyPrefix].append((
+                            0, minRange - 1, lookupTable[keyPrefix]))
+                        prefixesDict[keyPrefix].append((
+                            minRange, maxRange, nextHop))
+                        prefixesDict[keyPrefix].append((
+                            maxRange+1, 2**16-1, lookupTable[keyPrefix]))
 
                     lookupTable[keyPrefix] = None
 
