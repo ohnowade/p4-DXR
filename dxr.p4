@@ -164,7 +164,7 @@ control RangeTableStage1(inout headers hdr,
             get_next_node(hdr, meta, standard_metadata);
             NoAction;
         }
-        size = 1200;
+        size = 27000;
         default_action = NoAction();
     }
 
@@ -184,7 +184,7 @@ control RangeTableStage2(inout headers hdr,
             get_next_node(hdr, meta, standard_metadata);
             NoAction;
         }
-        size = 1500;
+        size = 27000;
         default_action = NoAction();
     }
 
@@ -204,6 +204,7 @@ control RangeTableStage3(inout headers hdr,
             get_next_node(hdr, meta, standard_metadata);
             NoAction;
         }
+        size = 31000;
         default_action = NoAction();
     }
 
@@ -223,6 +224,7 @@ control RangeTableStage4(inout headers hdr,
             get_next_node(hdr, meta, standard_metadata);
             NoAction;
         }
+        size = 39000;
         default_action = NoAction();
     }
 
@@ -242,6 +244,7 @@ control RangeTableStage5(inout headers hdr,
             get_next_node(hdr, meta, standard_metadata);
             NoAction;
         }
+        size = 45000;
         default_action = NoAction();
     }
 
@@ -261,6 +264,7 @@ control RangeTableStage6(inout headers hdr,
             get_next_node(hdr, meta, standard_metadata);
             NoAction;
         }
+        size = 45200;
         default_action = NoAction();
     }
 
@@ -280,6 +284,7 @@ control RangeTableStage7(inout headers hdr,
             get_next_node(hdr, meta, standard_metadata);
             NoAction;
         }
+        size = 36000;
         default_action = NoAction();
     }
 
@@ -299,6 +304,7 @@ control RangeTableStage8(inout headers hdr,
             get_next_node(hdr, meta, standard_metadata);
             NoAction;
         }
+        size = 12000;
         default_action = NoAction();
     }
 
@@ -318,6 +324,7 @@ control RangeTableStage9(inout headers hdr,
             get_next_node(hdr, meta, standard_metadata);
             NoAction;
         }
+        size = 1500;
         default_action = NoAction();
     }
 
