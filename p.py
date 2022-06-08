@@ -9,6 +9,13 @@ class Tree:
         self.hop = hop
         self.index = index
 
+def add_broadcast_group(num):
+    f = open('cmd1.txt', 'a')
+    f.write('mc_mgrp_create 1\n')
+    for i in range(1, num + 1):
+        f.write('mc_node_create {} {}\n'.format(i - 1, i))
+        f.write('mc_node_associate 1 {}\n'.format(i - 1))
+    f.close()
 
 def buildBtree(treelist, levelindex):
     return treeHelper(treelist,1,len(treelist)-1,0, levelindex)
@@ -48,7 +55,7 @@ def conTree(tree, f):
     table_name = "range_table_level_" + str(tree.level)
     f.write("table_add "+ table_name + " get_next_node " + str(tree.index)+ ' => ' + str(tree.value) +" " + str(tree.hop) + " ")
     if(tree.left == None):
-        f.write('0')
+        f.write('0 ')
     else:
         f.write(str(tree.left.index))
         f.write(" ")
@@ -67,7 +74,7 @@ def main():
     #list, dict
     lookupTable, prefixesDict = preprocess.createTables()
     #print(lookupTable)
-    #print(prefixesDict)
+    print(prefixesDict.get(14665))
     #create next hop dic
     dict_nh = {None:0, 'default':1}
     
@@ -118,8 +125,10 @@ def main():
     convet(treelist,f)
     # the rest of list has value none, -> index is key is
     #call
-    #print(dict_nh)
+    print(dict_nh)
     #print(totalli)
     f.close()
+    add_broadcast_group(3)
+    
 
 main()
