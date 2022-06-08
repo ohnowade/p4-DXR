@@ -288,6 +288,44 @@ control RangeTableStage7(inout headers hdr,
     }  
 }
 
+control RangeTableStage8(inout headers hdr,
+                         inout metadata meta,
+                         inout standard_metadata_t standard_metadata) {
+    table range_table_level_8 {
+        key =  {
+            meta.next_node_id : exact;
+        }
+        actions = {
+            get_next_node(hdr, meta, standard_metadata);
+            NoAction;
+        }
+        default_action = NoAction();
+    }
+
+    apply {
+        range_table_level_8.apply();
+    }  
+}
+
+control RangeTableStage9(inout headers hdr,
+                         inout metadata meta,
+                         inout standard_metadata_t standard_metadata) {
+    table range_table_level_9 {
+        key =  {
+            meta.next_node_id : exact;
+        }
+        actions = {
+            get_next_node(hdr, meta, standard_metadata);
+            NoAction;
+        }
+        default_action = NoAction();
+    }
+
+    apply {
+        range_table_level_9.apply();
+    }  
+}
+
 control MyIngress(inout headers hdr,
                   inout metadata meta,
                   inout standard_metadata_t standard_metadata) {
@@ -303,7 +341,8 @@ control MyIngress(inout headers hdr,
     RangeTableStage5() rangeTableStage5;
     RangeTableStage6() rangeTableStage6;
     RangeTableStage7() rangeTableStage7;
-
+    RangeTableStage8() rangeTableStage8;
+    RangeTableStage9() rangeTableStage9;
 
     apply {
         if (meta.isARP) {
@@ -325,6 +364,10 @@ control MyIngress(inout headers hdr,
             rangeTableStage6.apply(hdr, meta, standard_metadata);
             if (meta.matched) exit;
             rangeTableStage7.apply(hdr, meta, standard_metadata);
+            if (meta.matched) exit;
+            rangeTableStage8.apply(hdr, meta, standard_metadata);
+            if (meta.matched) exit;
+            rangeTableStage9.apply(hdr, meta, standard_metadata);
         }
     }
 }
