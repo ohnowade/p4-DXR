@@ -98,7 +98,7 @@ control QueryLookupTable(inout headers hdr,
                          inout standard_metadata_t standard_metadata) {
 
     action get_range_table(bit<16> top_level_id,
-                           bit<9> next_hop) {
+                           bit<3> next_hop) {
         if (top_level_id > 0) {
             meta.matched = false;
             meta.next_node_id = top_level_id;
@@ -131,7 +131,7 @@ action get_next_node(inout headers hdr,
                      inout metadata meta,
                      inout standard_metadata_t standard_metadata,
                      bit<16> val,
-                     bit<9> next_hop,
+                     bit<3> next_hop,
                      bit<16> left_node,
                      bit<16> right_node) {
     bit<16> last_16_bits = (bit<16>)(hdr.ipv4.dstAddr & 0xFFFF);
