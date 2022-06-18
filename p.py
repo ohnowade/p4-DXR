@@ -137,7 +137,7 @@ def main():
     print(dict_nh)
     print(totalli)
     f.close()
-    add_broadcast_group(3)
+    add_broadcast_group(6)
 
 
 main()
