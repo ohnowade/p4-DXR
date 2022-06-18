@@ -33,6 +33,7 @@ def getRange(ipv4, filter=32):
 
 
 def createTables():
+    cnt = 0
     lookupTable = [None] * (2**16)
     prefixesDict = defaultdict(list)
     with open('bgptable.txt') as f:
@@ -41,6 +42,7 @@ def createTables():
                 r'\*.*(\d+\.\d+\.\d+\.\d+/?\d*).*(\d+\.\d+\.\d+\.\d+)', line)
             if results == None:
                 continue
+            cnt += 1
             # tranform to string
 
             results = results.group(0)
@@ -181,5 +183,6 @@ def createTables():
                 newRangeTable.append(prefixesDict[key][i])
 
         prefixesDict[key] = newRangeTable[:]
+    print('Total number of prefixes is {}'.format(cnt))
 
     return lookupTable, prefixesDict
