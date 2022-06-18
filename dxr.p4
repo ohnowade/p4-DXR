@@ -104,7 +104,7 @@ control QueryLookupTable(inout headers hdr,
             meta.next_node_id = top_level_id;
         } else {
             meta.matched = true;
-            standard_metadata.egress_spec = next_hop;
+            standard_metadata.egress_spec = (egressSpec_t) next_hop;
             hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
         }
     }
@@ -136,7 +136,7 @@ action get_next_node(inout headers hdr,
                      bit<16> right_node) {
     bit<16> last_16_bits = (bit<16>)(hdr.ipv4.dstAddr & 0xFFFF);
     if (last_16_bits >= val) {
-        standard_metadata.egress_spec = next_hop;
+        standard_metadata.egress_spec = (egressSpec_t) next_hop;
         if (right_node == 0) {
             meta.matched = true;
             hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
